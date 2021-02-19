@@ -41,8 +41,8 @@ Sometimes the function is unknown, or the rate varies along the period.
 #### General Functions
 
 All Investments have at least the following methods.
-However, those methods are valid if and only if there is a function associated
-with the investment. It's true only if subclasses of investment
+However, those methods are valid if, and only if, there is a function associated
+with the investment. It's true only within subclasses of investment.
   
 * Return on Investment (ROI)
 $$FV/PV - 1$$
@@ -56,9 +56,9 @@ Bonds are one type of investment and inherit attributes and Methods from it.
 
 #### Bonds Attributes
 
-* Min PV
-* Min Period
-* 
+* Min PV (float > 0)
+* Min Period (time delta)
+* day Convention =  - 30/360 Convention 
 
 
 
@@ -87,3 +87,5 @@ Bonds are one type of investment and inherit attributes and Methods from it.
     * end date
     * plot
 
+
+https://www.investopedia.com/ask/answers/06/daycountconvention.asp
