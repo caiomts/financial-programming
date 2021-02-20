@@ -98,14 +98,10 @@ class Bonds(Investment):
 
     def bond_cash_flow(self, start_date='2000-01-01', end_date=None):
         """"""
-        cash_flow = pd.DataFrame({'Date': pd.date_range(start_date, periods=self.period.days, freq="D"),
-                                  'daily_rate': self.rate,
-                                  'compound_rate': (1 + self.rate).cumprod() - 1,
-                                  'daily_fv': (1 + self.rate).cumprod() * self.pv}).set_index('Date')
-        if end_date is None:
-            return cash_flow
-        else:
-            return cash_flow[cash_flow.index <= end_date]
+        cf = cash_flow(start_date=start_date, rate=self.rate, pv=self.pv, period=self.period)
+        if end_date is not None:
+            return cf[cf.index <= end_date]
+        return cf
 
 
 # General functions. All this functions fits more than one type of Investment
@@ -116,9 +112,19 @@ def compound_rate(rate):
     return (1 + rate).prod() - 1
 
 
-x = Bonds.long(pd.Timedelta('1800 days'), 2000)
+def cash_flow(start_date, rate, pv, end_date=None, period=None):
+    """"""
+    if end_date is None:
+        date = pd.date_range(start_date, periods=period.days, freq="D")
+    else:
+        date = pd.date_range(start=start_date, end=end_date, freq="D")
+    daily_compound_rate = (1 + rate).cumprod() - 1
+    daily_fv = (daily_compound_rate + 1) * pv
+    daily_return = daily_fv - pv
+    cf = pd.DataFrame({'Date': date,
+                       'daily_rate': rate,
+                       'compound_rate': daily_compound_rate,
+                       'daily_fv': daily_fv,
+                       'daily_return': daily_return}).set_index('Date')
+    return cf
 
-y = x.bond_cash_flow().resample('Y').asfreq()
-
-print(x.bond_cash_flow(end_date='2003-12-31').resample('Y').asfreq())
-print(x.bond_cash_flow())
