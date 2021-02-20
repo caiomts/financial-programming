@@ -85,15 +85,15 @@ class Bonds(Investment):
         self.fv = self.pv * (1 + compound_rate(self.rate))
 
     @classmethod
-    def short(cls, period, pv):
+    def short(cls, period, pv, day_convention=360):
         min_price, min_period, rate = 250, pd.Timedelta('720 days'), 0.015
-        bond = cls(period, pv, rate, min_price, min_period)
+        bond = cls(period, pv, rate, min_price, min_period, day_convention)
         return bond
 
     @classmethod
-    def long(cls, period, pv):
+    def long(cls, period, pv, day_convention=360):
         min_price, min_period, rate = 1000, pd.Timedelta('1800 days'), 0.03
-        bond = cls(period, pv, rate, min_price, min_period)
+        bond = cls(period, pv, rate, min_price, min_period, day_convention)
         return bond
 
     def bond_cash_flow(self, start_date='2000-01-01', end_date=None):

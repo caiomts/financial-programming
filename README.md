@@ -32,6 +32,7 @@ Any advise for common problems or issues.
 ## Author
 
 Caio Mescouto Terra de Souza
+
 * caio.mescouto-terra-de-souza@tsm-education.fr
 
 ## Version History

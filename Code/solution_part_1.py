@@ -9,8 +9,8 @@ sns.set_theme(style="whitegrid")
 
 period = pd.Timedelta('365 days') * 51
 
-long = invest_sim.Bonds.long(period, 1000)
-short = invest_sim.Bonds.short(period, 250)
+long = invest_sim.Bonds.long(period, 1000, day_convention=365)
+short = invest_sim.Bonds.short(period, 250, day_convention=365)
 
 long_reshape = long.bond_cash_flow(start_date='2000-01-01', end_date='2049-12-31').resample('365D').asfreq()
 shor_reshape = short.bond_cash_flow(start_date='2000-01-01', end_date='2049-12-31').resample('365D').asfreq()
