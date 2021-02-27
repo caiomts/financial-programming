@@ -2,8 +2,6 @@ import investor_sim_objects as investso
 import os
 import pandas as pd
 import seaborn as sns
-import pandas_datareader.data as web
-import matplotlib
 import matplotlib.pyplot as plt
 from datetime import datetime
 
