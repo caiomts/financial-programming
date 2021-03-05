@@ -1,11 +1,17 @@
-import investor_sim_objects as investso
+import investor_simulator as investso
 import os
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
+from matplotlib.dates import DateFormatter
 from datetime import datetime
 
-sns.set_theme(style="whitegrid")
+# Handle date time conversions between pandas and matplotlib
+from pandas.plotting import register_matplotlib_converters
+register_matplotlib_converters()
+
+# Use white grid plot background from seaborn
+sns.set(font_scale=1.5, style="whitegrid")
 
 # Part 1
 
@@ -20,29 +26,31 @@ shor_reshape = short.cash_flow().resample('Y').asfreq()
 bonds = pd.concat([long_reshape, shor_reshape], keys=['long', 'short'],
                   names=['investment', 'date']).reset_index(level='investment')
 
-g = sns.relplot(data=bonds.reset_index(), x='date', y="value", hue="investment", linewidth=2.5)
-g.set(xlabel='Years', ylabel='Price', title='Bonds Prices', ylim=(100, 5000))
-plt.savefig(os.path.abspath('../Results/50y_plot.png'), dpi=800)
+fig, ax = plt.subplots(figsize=(15, 10))
+g = sns.lineplot(data=bonds.reset_index(), x='date', y="value", hue="investment", linewidth=2.5)
+g.set(xlabel='Years', ylabel='Price', title='Bonds Prices')
+plt.savefig(os.path.abspath('../Results/bonds_plot.png'), dpi=800)
+
 
 plt.clf()
 
 # Part 2
 
-start = datetime(2016, 9, 1)
-end = datetime(2021, 1, 1)
+start = datetime(2016, 1, 1)
 
 tickers = ['FDX', 'GOOGL', 'XOM', 'KO', 'NOK', 'MS', 'IBM']
 
-stocks = [investso.Stocks(pd.DateOffset(years=5), ticker, 1, start) for ticker in tickers]
+stocks = [investso.Stocks(pd.DateOffset(years=5), ticker, 1, start).price for ticker in tickers]
 
-for stock in stocks:
-    f = sns.lineplot(data=stock.price)
-    f.set(xlabel='Years', ylabel='Price', title='Stock Prices')
+stocks = pd.concat(stocks, keys=[ticker for ticker in tickers],
+                   names=['investment', 'date']).reset_index(level='investment')
 
-plt.savefig(os.path.abspath('../Results/stock_plot.png'), dpi=800)
-
-
-
+fig, ax = plt.subplots(figsize=(15, 10))
+g = sns.lineplot(data=stocks.reset_index(), x='date', y=0, hue="investment", linewidth=2.5)
+g.set(xlabel='Years', ylabel='Price', title='Bonds Prices')
+date_form = DateFormatter("%Y")
+ax.xaxis.set_major_formatter(date_form)
+plt.savefig(os.path.abspath('../Results/stocks_plot.png'), dpi=800)
 
 
 
