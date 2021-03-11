@@ -23,7 +23,7 @@ class Date:
         self.storage_name = storage_name
 
     def __set__(self, instance, value):
-        if isinstance(value, datetime) or (value is None):
+        if isinstance(value, datetime):
             instance.__dict__[self.storage_name] = value
         else:
             raise ValueError('value must be a datetime')
@@ -43,7 +43,7 @@ class OneOfStock:
 
 
 class OneOfMode:
-    """General descriptor for stocks"""
+    """General descriptor for investor mode"""
 
     def __init__(self, storage_name):
         self.storage_name = storage_name
@@ -68,23 +68,9 @@ class Monetary:
             raise ValueError('value must be >= 0')
 
 
-class Rates:
-    """General descriptor for rates"""
-
-    def __init__(self, storage_name):
-        self.storage_name = storage_name
-
-    def __set__(self, instance, value):
-        if (value is None) or isinstance(value, float):
-            instance.__dict__[self.storage_name] = value
-        else:
-            raise ValueError('value must be float')
-
-
 class Investment:
     """Investment is an abstract object. Bonds and Stocks inherit attributes and methods"""
     pv = Monetary('pv')
-    rate = Rates('rate')
     start_date = Date('start_date')
     end_date = Date('end_date')
 
@@ -108,13 +94,10 @@ class Investment:
 class Bonds(Investment):
     """All Bonds"""
 
-    def __init__(self, pv, rate, start_date, end_date):
+    def __init__(self, pv, rate: float, start_date, end_date):
         super(Bonds, self).__init__(pv, start_date, end_date)
         self.rate = rate
-        total_days = (self.end_date - self.start_date).days
-        years = int((self.end_date - self.start_date).days / 360)
-        self.rate_flow = pd.Series(itertools.repeat((1 + self.rate) ** (1 / (total_days / years)) - 1,
-                                                    total_days))
+        self.rate_flow = pd.Series(itertools.repeat((1 + self.rate) ** (1 / 360) - 1, self.term.days))
         self.rate_flow.iloc[0] = 0
         cash_flow = pd.DataFrame({'Date': pd.date_range(self.start_date, end=self.end_date, freq="D", closed='left'),
                                   'Value': (1 + self.rate_flow).cumprod() * self.pv})
@@ -130,14 +113,14 @@ class Bonds(Investment):
 
     @classmethod  # Call a bond as a long one. Ensure rate, min price and min period
     def long(cls, start_date, pv=1000):
-        if pv < 250:
+        if pv < 1000:
             raise ValueError('pv must be >= 1000')
         rate, end_date = 0.03, start_date + pd.DateOffset(years=5)
         bond = cls(pv, rate, start_date, end_date)
         return bond
 
     def compound_rate(self, end_date):
-        """Returns compound rate for a given date or entire period"""
+        """Returns compound rate for a given date"""
         total_days = (end_date - self.start_date).days
         return round((1 + self.rate_flow.loc[self.rate_flow.index <= total_days]).prod() - 1, 4)
 
@@ -160,23 +143,25 @@ class Stocks(Investment):
         self.cash_flow = cash_flow.set_index('Date').fillna(method='pad').loc[self.start_date:, ]
 
     def return_on_stock(self, end_date):
-        """Returns return on stock in a given date or entire period"""
+        """Returns return on stock in a given date"""
         return self.price[self.price.index <= end_date].iloc[-1] / self.price.iloc[0] - 1
 
     def get_price(self, end_date):
-        """Returns the price in a given date or entire period"""
+        """Returns the price in a given date"""
         return self.price[self.price.index <= end_date].iloc[-1]
+
+# Investor is a named tuple if mode and budget as attributes
 
 
 Investor = collections.namedtuple('Investor', ['mode', 'budget'])
 
 
 class Portfolio:
-    """All portfolios"""
+    """All portfolios. Links Investor with investments"""
     mode = OneOfMode('mode')
     budget = Monetary('budget')
 
-    def __init__(self, investor, start_date, end_date, investment_weights=(75, 25)):
+    def __init__(self, investor: Investor, start_date, end_date, investment_weights: tuple = (75, 25)):
         self.investor = investor
         self.budget = self.investor[1]
         self.start_date = start_date
@@ -207,6 +192,8 @@ def defensive(portfolio):
                   investments[investment[0]].cash_flow.iloc[-1, 0]) for investment in investments_list]
     for end_date in end_dates:
         if end_date[0] < portfolio.end_date:
+            # Deal with overdue bonds.  Starts a recursive function to build a new portfolio with same mode
+            # and calculates the new budget as bond's final value + rest of old budget.
             investor = Investor(portfolio.investor[0], end_date[1] + portfolio.budget)
             new_port = Portfolio(investor, start_date=end_date[0],
                                  end_date=portfolio.end_date)

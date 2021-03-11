@@ -73,3 +73,14 @@ ax.set_xticklabels(labels)
 plt.savefig(os.path.abspath('../Results/portfolios_annual_return_plot_Sim4_bonus.png'), dpi=800)
 plt.show()
 
+# What is the best stock.
+
+return_on_stocks = {x: investsim.Stocks(x, start_date=datetime(2016, 12, 31),
+                                        end_date=datetime(2017, 12, 31)).return_on_stock(datetime(2017, 12, 31))
+                    for x in investsim.tickers}
+
+return_on_stocks = pd.DataFrame(return_on_stocks, index=['Annual return'])
+
+return_on_stocks.plot(kind='barh', figsize=(15, 10))
+plt.savefig(os.path.abspath('../Results/stocks_annual_return_bonus.png'), dpi=800)
+plt.show()
