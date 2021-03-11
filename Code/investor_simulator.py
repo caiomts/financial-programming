@@ -1,18 +1,16 @@
 import pandas as pd
-import numpy as np
 import itertools
 import pandas_datareader.data as web
+from pandas.tseries.offsets import BDay
 from datetime import datetime
 import random
 import math
 import collections
 
 # Stocks data
-start = datetime(2014, 1, 4)
-end = datetime(2021, 1, 1)
 
 tickers = ['FDX', 'GOOGL', 'XOM', 'KO', 'NOK', 'MS', 'IBM']
-stocks_df = web.DataReader(tickers, 'yahoo', datetime(2013, 1, 10)).High
+stocks_df = web.DataReader(tickers, 'yahoo', start=datetime(2012, 1, 1)).High
 
 
 # Descriptors guarantee the type and behavior of variables
@@ -70,19 +68,6 @@ class Monetary:
             raise ValueError('value must be >= 0')
 
 
-class Period:
-    """General descriptor for period"""
-
-    def __init__(self, storage_name):
-        self.storage_name = storage_name
-
-    def __set__(self, instance, value):
-        if isinstance(value, pd.DateOffset):
-            instance.__dict__[self.storage_name] = value
-        else:
-            raise ValueError('value must be >= 1 and Type pd.DateOffset')
-
-
 class Rates:
     """General descriptor for rates"""
 
@@ -90,142 +75,97 @@ class Rates:
         self.storage_name = storage_name
 
     def __set__(self, instance, value):
-        if (value is None) or isinstance(value, (float, pd.Series)):
+        if (value is None) or isinstance(value, float):
             instance.__dict__[self.storage_name] = value
         else:
-            raise ValueError('value must be float or pandas.Series')
-
-
-def stocks_date(date):
-    """Returns closest date before the argument for which stock data are available"""
-    if date in stocks_df.index:
-        new_date = date
-    else:
-        while date not in stocks_df.index:
-            try:
-                date += - pd.Timedelta('1 day')
-            except KeyError:
-                pass
-        new_date = date
-    return new_date
+            raise ValueError('value must be float')
 
 
 class Investment:
     """Investment is an abstract object. Bonds and Stocks inherit attributes and methods"""
-    period = Period('period')
     pv = Monetary('pv')
     rate = Rates('rate')
     start_date = Date('start_date')
+    end_date = Date('end_date')
 
-    def __init__(self, period, pv, start_date):
-        self.period = period
+    def __init__(self, pv, start_date, end_date):
         self.pv = pv
-        self.value = None
-        self.rate = None
         self.start_date = start_date
-        self.end_date = self.start_date + self.period
+        self.end_date = end_date
+        self.term = self.end_date - self.start_date
+        self.cash_flow = None
 
     def return_on_investment(self):
-        return (self.value.iloc[-1, 0] / self.pv) - 1
+        return round((self.cash_flow.iloc[-1, 0] / self.pv) - 1, 4)
 
     def total_return(self):
-        return self.value.iloc[-1, 0] - self.pv
+        return round(self.cash_flow.iloc[-1, 0] - self.pv, 2)
 
     def risk_on_investment(self):
-        return np.std(self.value.pct_change())
+        return round(self.cash_flow.pct_change().std(), 4)
 
 
 class Bonds(Investment):
     """All Bonds"""
-    min_price = Monetary('min_price')
-    min_period = Period('min_period')
 
-    def __init__(self, period, pv, rate, start_date=start, min_price=0.0, min_period=pd.DateOffset(years=1)):
-        super(Bonds, self).__init__(period, pv, start_date)
-        if self.pv < min_price:
-            raise AttributeError('pv should be >= %s' % min_price)
-        else:
-            self._min_price = min_price
-        if (start_date + self.period) < (start_date + min_period):
-            raise AttributeError('period should be >= %s' % min_period)
-        else:
-            self._min_period = min_period
-        self.days_year = int((self.end_date - self.start_date).days / 360)
+    def __init__(self, pv, rate, start_date, end_date):
+        super(Bonds, self).__init__(pv, start_date, end_date)
         self.rate = rate
-        # Transform interest rate into pd.Series and
-        # ensure that pd.Series length is equal to the number of days in the period.
-        if not isinstance(self.rate, pd.Series):
-            total_days = (self.end_date - self.start_date).days
-            self.rate = pd.Series(itertools.repeat((1 + self.rate) ** (1 / (total_days / self.days_year)) - 1,
-                                                   total_days))
-            self.rate.iloc[0] = 0
-        # Set value as DataFrame with Date Index
-        date = pd.date_range(self.start_date, end=self.end_date, freq="D", closed='left')
-        value = pd.DataFrame({'value': (1 + self.rate).cumprod() * self.pv})
-        self.value = value.set_index(date)
+        total_days = (self.end_date - self.start_date).days
+        years = int((self.end_date - self.start_date).days / 360)
+        self.rate_flow = pd.Series(itertools.repeat((1 + self.rate) ** (1 / (total_days / years)) - 1,
+                                                    total_days))
+        self.rate_flow.iloc[0] = 0
+        cash_flow = pd.DataFrame({'Date': pd.date_range(self.start_date, end=self.end_date, freq="D", closed='left'),
+                                  'Value': (1 + self.rate_flow).cumprod() * self.pv})
+        self.cash_flow = cash_flow.set_index('Date')
 
     @classmethod  # Call a bond as a short one. Ensure rate, min price and min period
-    def short(cls, period=pd.DateOffset(years=2), pv=250, start_date=start):
-        min_price, min_period, rate = 250, pd.DateOffset(years=2), 0.015
-        bond = cls(period, pv, rate, start_date, min_price, min_period)
+    def short(cls, start_date,  pv=250):
+        if pv < 250:
+            raise ValueError('pv must be >= 250')
+        rate, end_date = 0.015, start_date + pd.DateOffset(years=2)
+        bond = cls(pv, rate, start_date, end_date)
         return bond
 
     @classmethod  # Call a bond as a long one. Ensure rate, min price and min period
-    def long(cls, period=pd.DateOffset(years=5), pv=1000, start_date=start):
-        min_price, min_period, rate = 1000, pd.DateOffset(years=5), 0.03
-        bond = cls(period, pv, rate, start_date, min_price, min_period)
+    def long(cls, start_date, pv=1000):
+        if pv < 250:
+            raise ValueError('pv must be >= 1000')
+        rate, end_date = 0.03, start_date + pd.DateOffset(years=5)
+        bond = cls(pv, rate, start_date, end_date)
         return bond
 
-    def cash_flow(self, end_date=None):
-        """Returns the bond cash flow for a given date or entire period"""
-        if end_date is None:
-            return self.value
-        else:
-            return self.value[self.value.index <= end_date]
-
-    def compound_rate(self, end_date=None):
+    def compound_rate(self, end_date):
         """Returns compound rate for a given date or entire period"""
-        if end_date is None:
-            return (1 + self.rate).prod() - 1
-        else:
-            total_days = (end_date - self.start_date).days
-            subset_rate = self.rate.iloc[:total_days + 1]
-            return (1 + subset_rate).prod() - 1
+        total_days = (end_date - self.start_date).days
+        return round((1 + self.rate_flow.loc[self.rate_flow.index <= total_days]).prod() - 1, 4)
 
 
 class Stocks(Investment):
     """All stocks"""
     name = OneOfStock('name')
 
-    def __init__(self, period, name, num_stocks: int = 1, start_date=start):
-        self.period = period
-        self.start_date = start_date
-        self.end_date = self.start_date + self.period
+    def __init__(self, name, start_date, end_date, num_stocks: int = 1):
         self.name = name
+        self.start_date = start_date
+        self.end_date = end_date
         self.num_stocks = num_stocks
-        self.price = stocks_df.loc[stocks_date(self.start_date):stocks_date(self.end_date), self.name]
+        self.price = stocks_df.loc[(self.start_date - BDay(1)):self.end_date, self.name]
         self.pv = self.price.iloc[0] * self.num_stocks
-        value = pd.DataFrame({}, index=pd.date_range(start=self.start_date, end=self.end_date, freq="D", closed='left'))
-        value = value.merge(pd.DataFrame({'value': self.price.loc[stocks_date(self.start_date):
-                                                                  stocks_date(self.end_date)] * self.num_stocks})
-                            , how='left', right_on='Date', left_index=True)
-        self.value = value.set_index('Date').fillna(method='pad').fillna(method='bfill')
+        cash_flow = pd.DataFrame({}, index=pd.date_range(start=(self.start_date - BDay(1)),
+                                                         end=self.end_date, freq="D", closed='left'))
+        cash_flow = cash_flow.merge(pd.DataFrame({'Value': self.price * self.num_stocks}), how='outer',
+                                    right_on='Date', left_index=True)
+        self.cash_flow = cash_flow.set_index('Date').fillna(method='pad').loc[self.start_date:, ]
 
-    def return_on_stock(self, end_date=None):
+    def return_on_stock(self, end_date):
         """Returns return on stock in a given date or entire period"""
-        if end_date is None:
-            return (self.price.iloc[-1] / self.price.iloc[0]) - 1
-        else:
-            date = stocks_date(end_date)
-            return self.price[self.price.index == date] / self.price.iloc[0] - 1
+        return self.price[self.price.index <= end_date].iloc[-1] / self.price.iloc[0] - 1
 
-    def get_price(self, end_date=None):
+    def get_price(self, end_date):
         """Returns the price in a given date or entire period"""
-        if end_date is None:
-            return self.price.iloc[-1]
-        else:
-            date = stocks_date(end_date)
-            return self.price[self.price.index == date]
+        return self.price[self.price.index <= end_date].iloc[-1]
 
 
 Investor = collections.namedtuple('Investor', ['mode', 'budget'])
@@ -235,100 +175,87 @@ class Portfolio:
     """All portfolios"""
     mode = OneOfMode('mode')
     budget = Monetary('budget')
-    period = Period('period')
 
-    def __init__(self, investor, period, start_date=start, recalculate: bool = False, weights=[75, 25]):
+    def __init__(self, investor, start_date, end_date, investment_weights=(75, 25)):
         self.investor = investor
-        self.mode = investor[0]
-        self.budget = investor[1]
-        self.period = period
+        self.budget = self.investor[1]
         self.start_date = start_date
-        self.recalculate = recalculate
-        self.weights = weights
-        self.investments = self.mode(self)  # Automatically call the mode function and build the portfolio
+        self.end_date = end_date
+        self.investment_weights = investment_weights
+        self.term = self.end_date - self.start_date
+        self.mode = self.investor[0]
+        self.investments = self.mode(self)
         self.invest_list = [(k, i) for k, i in self.investments.items()]
 
-    def invest_weights(self):
-        weights = np.array(self.budget)
-        for invest in self.invest_list:
-            key = invest[0]
-            weight = self.investments[key].pv / self.investor[1]
-            weights = np.append(weights, weight)
-        return weights
-
-    def portfolio_return(self):
-        if self.recalculate is True:
-            raise ValueError('This Methods works only for recalculate == False')
-        else:
-            return_on_investment = np.array([self.investments[investment[0]].return_on_investment() for investment
-                                             in self.invest_list]).reshape(len(self.investments), )
-            return_on_investment = np.insert(return_on_investment, 0, np.array(0))
-            return self.invest_weights().T @ return_on_investment
-
-    def portfolio_vol(self):
-        if self.recalculate is True:
-            raise ValueError('This Methods works only for recalculate == False')
-        else:
-            weights = self.invest_weights()
-            length = len(self.invest_list[0][1].value)
-            vol_on_investment = np.array([self.investments[investment[0]].value.pct_change() for investment in
-                                          self.invest_list]).reshape(len(self.investments), length)
-            vol_on_investment = np.insert(vol_on_investment, 0, 0, axis=0)
-            return (weights.T @ np.cov(vol_on_investment[:, 1:]) @ weights) ** 0.5
-
     def portfolio_cash_flow(self):
-        investment_values = [self.investments[investment[0]].value for investment in self.invest_list]
+        investment_values = [self.investments[investment[0]].cash_flow for investment in self.invest_list]
         investment_keys = [investment[0] for investment in self.invest_list]
         port_cf = pd.concat(investment_values, keys=investment_keys,
-                            names=['investment', 'date']).reset_index(level='investment').fillna(method='pad')
-        port_cf.value += self.budget
-        end_date = self.start_date + self.period
-        return port_cf[port_cf.index < end_date]
+                            names=['Investment', 'Date']).reset_index(level='Investment').fillna(method='pad')
+        return port_cf[port_cf.index < self.end_date]
 
 
 # Mode functions. Defensive and Aggressive just fill the dict with bonds and stocks respectively,
 # according with the type and values returned by accounting_investment().
 def defensive(portfolio):
     """Builds a defensive portfolio"""
+    new_list = []
     bonds = accounting_investment(portfolio)
-    return {key: getattr(Bonds, key)(pv=bonds[key], period=portfolio.period,
-                                     start_date=portfolio.start_date) for key in bonds}
+    investments = {key: getattr(Bonds, key)(start_date=portfolio.start_date, pv=bonds[key]) for key in bonds}
+    investments_list = [(k, i) for k, i in investments.items()]
+    end_dates = [(investments[investment[0]].end_date,
+                  investments[investment[0]].cash_flow.iloc[-1, 0]) for investment in investments_list]
+    for end_date in end_dates:
+        if end_date[0] < portfolio.end_date:
+            investor = Investor(portfolio.investor[0], end_date[1] + portfolio.budget)
+            new_port = Portfolio(investor, start_date=end_date[0],
+                                 end_date=portfolio.end_date)
+            new_list.extend([(k, i) for k, i in new_port.investments.items()])
+            portfolio.budget += new_port.budget
+    investments_2 = {k + '_' + str(math.trunc(random.random() * 100)): i for k, i in new_list}
+    return {**investments, **investments_2}
 
 
 def aggressive(portfolio):
     """Builds an aggressive portfolio"""
     stocks = accounting_investment(portfolio)
-    return {key: Stocks(portfolio.period, key, stocks[key], start_date=portfolio.start_date) for key in stocks}
+    return {key: Stocks(name=key, start_date=portfolio.start_date, end_date=portfolio.end_date,
+                        num_stocks=stocks[key]) for key in stocks}
 
 
 def mixed(portfolio):
     """builds a mixed portfolio"""
     investments = {}
-    investments2 = {}
+    temp = []
     # while budget is enough to buy a short bond, randomly weighted choose bond or stock.
-    while portfolio.budget >= Bonds.short().pv:
+    while portfolio.budget >= Bonds.short(start_date=portfolio.start_date).pv:
         mode_function = random.choices([pick_stock(portfolio), pick_bond(portfolio)],
-                                       weights=portfolio.weights)
+                                       weights=portfolio.investment_weights)
         try:  # if no bond or stock is bought just move on to the next
             portfolio.budget += - mode_function[0][1]  # subtract the acquisition price from the budget
             key = list(mode_function[0][0].keys())[0]
             if key in investments:
-                num = investments[key]
-                investments[key] = num + mode_function[0][0][key]
+                investments[key] += mode_function[0][0][key]
             else:
                 investments[key] = mode_function[0][0][key]
-        except TypeError:
+        except TypeError:   # Skips when "pick stocks" doesn't returns a dict.
             pass
-    for key in investments:  # loop dict filling it with bonds or stocks
-        if (key in {'short', 'long'}) and (portfolio.recalculate is False):
-            investments[key] = getattr(Bonds, key)(pv=investments[key], period=portfolio.period,
-                                                   start_date=portfolio.start_date)
-        elif key in {'short', 'long'}:  # in case of bond overdue
-            pass
+    for key in investments:
+        if key in {'short', 'long'}:
+            investments[key] = getattr(Bonds, key)(pv=investments[key], start_date=portfolio.start_date)
+            if investments[key].end_date <= portfolio.end_date:
+                budget = investments[key].cash_flow.iloc[-1, 0] + portfolio.budget
+                investor = Investor(portfolio.investor[0], budget)
+                new_port = Portfolio(investor, start_date=investments[key].end_date,
+                                     end_date=portfolio.end_date, investment_weights=portfolio.investment_weights)
+                temp.extend([(k, i) for k, i in new_port.investments.items()])
+                portfolio.budget += new_port.budget
         elif key in tickers:
-            investments[key] = Stocks(portfolio.period, key, investments[key], start_date=portfolio.start_date)
+            investments[key] = Stocks(key, start_date=portfolio.start_date, end_date=portfolio.end_date,
+                                      num_stocks=investments[key])
         else:
             pass
+    investments2 = {k + '_' + str(math.trunc(random.random() * 100)): i for k, i in temp}
     return {**investments, **investments2}
 
 
@@ -336,24 +263,26 @@ def mixed(portfolio):
 def pick_bond(portfolio):
     """Randomly picks a bond"""
     # budget is enough to buy a long bond, randomly choose one.
-    if portfolio.budget >= Bonds.long().pv:
+    if portfolio.budget >= Bonds.long(start_date=portfolio.start_date).pv:
         bond_type = random.choice(['long', 'short'])
-        value = getattr(Bonds, bond_type)().pv
+        value = getattr(Bonds, bond_type)(start_date=portfolio.start_date).pv
         return {bond_type: value}, value
     # budget is enough to buy a short bond, buy all budget.
-    elif portfolio.budget >= Bonds.short().pv:
+    else:
         bond_type = 'short'
         value = portfolio.budget
         return {bond_type: value}, value
-    else:
-        pass
 
 
 def pick_stock(portfolio):
     """Randomly picks a stock"""
     stock = random.choice(tickers)
-    price = Stocks(pd.DateOffset(days=5), stock, start_date=portfolio.start_date).pv
-    max_num_stocks = int(portfolio.budget / price)
+    try:
+        price = Stocks(name=stock, start_date=portfolio.start_date, end_date=portfolio.end_date).pv
+        max_num_stocks = int(portfolio.budget / price)
+        # Exception when the range date doesn't allow pick a stock. when Bonds due in the last few days of a portfolio.
+    except KeyError:
+        max_num_stocks = 0
     if max_num_stocks < 1:
         pass
     else:
@@ -365,7 +294,7 @@ def accounting_investment(portfolio):
     """Accounts bonds or stocks"""
     investments = {}
     if portfolio.mode is defensive:
-        min_budget = Bonds.short().pv
+        min_budget = Bonds.short(start_date=portfolio.start_date).pv
         function = pick_bond
     else:
         min_budget = 100
@@ -376,10 +305,54 @@ def accounting_investment(portfolio):
             key = list(invest[0].keys())[0]
             portfolio.budget += - invest[1]
             if key in investments:
-                num = investments[key]
-                investments[key] = num + invest[0][key]
+                investments[key] += invest[0][key]
             else:
                 investments[key] = invest[0][key]
-        except TypeError:
+        except TypeError:   # Skips when "pick stocks" doesn't returns a dict.
             pass
     return investments
+
+
+# Working on simulations
+def return_and_vol_on_portfolios(portfolio_lists: list, lists_names: list):
+    """Computes mean return and the mean volatility for each portfolios group"""
+    i = 0
+    return_on_group = {}
+    for group in portfolio_lists:
+        return_on_portfolio = [(p.portfolio_cash_flow().groupby('Date').sum().Value[-1] /
+                               p.portfolio_cash_flow().groupby('Date').sum().Value[0]) - 1 for p in group]
+        vol_on_portfolio = [p.portfolio_cash_flow().groupby('Date').sum().pct_change().std().Value for p in group]
+        mean_return_portfolio = sum(return_on_portfolio) / len(return_on_portfolio)
+        mean_vol_portfolio = sum(vol_on_portfolio) / len(vol_on_portfolio)
+        return_on_group[lists_names[i]] = (round(mean_return_portfolio, 4), round(mean_vol_portfolio, 4))
+        i += 1
+    return pd.DataFrame(return_on_group, index=['Investment return', 'daily volatility'])
+
+
+def mean_monthly_value_on_portfolios(portfolio_lists: list, lists_names: list):
+    """Calculates the mean monthly values for each portfolio group"""
+    list_cash_flows = []
+    for group in portfolio_lists:
+        cash_flows = [p.portfolio_cash_flow().groupby(['Date']).sum().resample('M').asfreq() for p in group]
+        keys = [p for p in group]
+        group_cash_flow = pd.concat(cash_flows, keys=keys,
+                                    names=['Portfolio', 'Date']).reset_index(level='Date') \
+            .groupby(['Date']).mean()
+        list_cash_flows.append(group_cash_flow)
+    return pd.concat(list_cash_flows, keys=lists_names,
+                     names=['Portfolio_group', 'Date']).reset_index(level='Date')
+
+
+def mean_yearly_return_on_portfolios(portfolio_lists: list, lists_names: list):
+    """Calculates the mean yearly return for each portfolio group"""
+    list_cash_flows = []
+    for group in portfolio_lists:
+        cash_flows = [p.portfolio_cash_flow().groupby(['Date']).sum().resample('Y')
+                      .asfreq().pct_change() for p in group]
+        keys = [p for p in group]
+        group_cash_flow = pd.concat(cash_flows, keys=keys,
+                                    names=['Portfolio', 'Date']).reset_index(level='Date') \
+            .groupby(['Date']).mean()
+        list_cash_flows.append(group_cash_flow)
+    return pd.concat(list_cash_flows, keys=lists_names,
+                     names=['Portfolio_group', 'Date']).reset_index(level='Date')
