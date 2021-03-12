@@ -97,7 +97,7 @@ class Bonds(Investment):
     def __init__(self, pv, rate: float, start_date, end_date):
         super(Bonds, self).__init__(pv, start_date, end_date)
         self.rate = rate
-        self.rate_flow = pd.Series(itertools.repeat((1 + self.rate) ** (1 / 360) - 1, self.term.days))
+        self.rate_flow = pd.Series(itertools.repeat((1 + self.rate) ** (1 / 365) - 1, self.term.days))
         self.rate_flow.iloc[0] = 0
         cash_flow = pd.DataFrame({'Date': pd.date_range(self.start_date, end=self.end_date, freq="D", closed='left'),
                                   'Value': (1 + self.rate_flow).cumprod() * self.pv})

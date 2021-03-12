@@ -8,26 +8,70 @@ Programming exercise. Modelling three types of investors with two types of inves
 
 ## Description
 
-An in-depth paragraph about your project and overview of use.
+The project contains one main script (investor_simulator.py) with objects and functions.
+The functional objects are: Bonds, Stocks, Investor, Portfolio.
+All objects have attributes and methods. Attributes that are inputted have defined class to ensure variables behavior.
+
+"Bonds" has as main Attributes: 
+  - period(pandas.DataOffset)
+  - pv(>= 0)
+  - rate(float, pd.Series)
+  - start_date(datetime)
+  - end_date(datetime)
+  - min_price(>= 0)
+  - min_period(pandas.DataOffset)
+  - value
+and main Methods:
+  - short, long - works as shortcut to create bonds with specifics characteristics.
+  - return_on_investment
+  - total_return
+  - cash_flow
+  - compound_rate
+
+"Stocks" has as main Attributes:
+  - start_date 
+  - end_date
+  - name ('FDX', 'GOOGL', 'XOM', 'KO', 'NOK', 'MS', 'IBM')
+  - num_stocks (int)
+  - price
+  - pv
+  - value
+and main Methods:
+  - return_on_investment
+  - total_return
+  - return_on_stock
+  - get_price
+
+Bonds and Stocks are subclass of Investment, some attributes and methods are inherited. 
+
+"Investor" is a namedtuple with mode (aggressive, defensive, mixed) and budget.
+Modes are functions called by Portfolio to build the investment portfolio following
+investor characteristics and a given period.
+
+"Portfolio" has as main attributes:
+  - mode (comes from the Investor)
+  - budget (comes from the Investor)
+  - period
+  - start_date
+  - recalculate (bool)
+  - weights [stocks, bonds]
+-  investments
 
 ## Getting Started
 
+Save the main script (investor_simulator.py) into the working directory and import as a package.
+
+
 ### Dependencies
 
-* Describe any prerequisites, libraries, OS version, etc., needed before installing program.
-* ex. Windows 10
-
-### Executing program
-
-* How to run the program
-* Step-by-step bullets
-```
-code blocks for commands
-```
-
-## Help
-
-Any advise for common problems or issues.
+#### Packages:
+- pandas
+- itertools
+- pandas_datareader.data
+- datetime
+- random
+- math
+- collections
 
 ## Author
 
