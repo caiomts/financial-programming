@@ -79,7 +79,7 @@
 \makeatother
 \subtitle{Financial Computing Exam Project}
 \author{Caio Mescouto Terra de Souza}
-\date{\today}
+\date{March 12, 2021 16:30 (Commit e77d19a)}
 
 \begin{document}
 \maketitle
@@ -99,7 +99,7 @@ Investor has only two attributes, mode and budget, but the portfolio is the mann
 \hypertarget{the-guideline-structure}{%
 \subsection{The guideline structure}\label{the-guideline-structure}}
 
-Any investment can be understood as a relationship between price (or present value) and future value. This relationship is a mathematical function that as follow \eqref{eq:pv}:
+Any investment can be understood as a relationship between price (or present value) and future value. This relationship is a mathematical function as follow \eqref{eq:pv}:
 
 \begin{equation}
 f(PV, rate, period)\rightarrow FV
@@ -108,32 +108,30 @@ f(PV, rate, period)\rightarrow FV
 
 Sometimes the function is unknown, or the interest rate varies along the period. Therefore, the way to deal with this limitation is approach any investment as a cash flow. the first assumption is define the minimum period (by now 1 day). Therefore, the equation can be solved for each day, because for any date we now the ``PV'' (the ``FV'' of the day - 1), the period and the interest rate or the FV. Finally, period (or term) is basically the difference between dates.
 
-The structure started with a object called ``Investment'' and ``Bonds'' and ``Stocks'' are objects whose inherit its attributes and methods. The role of ``Investment'' is abstract because we can't calculate the cash flow without a ``mathematical'' function that each investment type has its own. The ``Investor'' has only two attributes and the choice was to use a ``namedtuple'' to create it. and the last main structure is the ``Portfolio''. It is an object that combines Investor with Investments. The concept in which portfolio was thought is based on functions as First-Class objects in Python (Ramalho \protect\hyperlink{ref-fpy}{2015}, 167).
+The structure started with a object called ``Investment'' that ``Bonds'' and ``Stocks'' inherit its attributes and methods. The role of ``Investment'' is abstract because we can't calculate the cash flow without a ``mathematical'' function that each investment type has its own. As the ``Investor'' has only two attributes the choice was to use a ``namedtuple'' to create it. The last main structure is the ``Portfolio''. It is an object that combines Investor with Investments. The concept in which portfolio was thought is based on functions as First-Class objects in Python (Ramalho \protect\hyperlink{ref-fpy}{2015}, 167).
 
 \begin{figure}
 \centering
-\includegraphics[width=0.5\textwidth,height=\textheight]{uml.png}
+\includegraphics[width=0.55\textwidth,height=\textheight]{uml.png}
 \caption{UML of main objects}
 \end{figure}
 
 \hypertarget{bonds}{%
 \subsection{Bonds}\label{bonds}}
 
-As the interest rate are annual and the unit of period was set as day, it was necessary define a strategy to deal with the transformation, since years do not have all the same numbers of days. As the trade-off between having exactly the daily rate or adopting a convention (Martellini, Priaulet, and Priaulet \protect\hyperlink{ref-secur}{2003}, 4) is very small, compared to the work of coding it, the assumption adopted was day-count 365 \eqref{eq:bonds-day}.
+As the interest rate are annual and the unit of period was set as day, it was necessary to deal with the transformation, since years do not have all the same numbers of days. The trade-off between having exactly the daily rate or adopting a convention (Martellini, Priaulet, and Priaulet \protect\hyperlink{ref-secur}{2003}, 4) that set only on daily rate through the period, is very small compared to the work of coding it, thus the assumption adopted was day-count 365 \eqref{eq:bonds-day}.
 
 \begin{equation}
 i_{\text{daily interest rate}}=(1+i_{\text{annual interest rate}})^{\frac{1}{365}}-1
 \label{eq:bonds-day}
 \end{equation}
 
-Two different bonds were required, but as the behavior are the same, it was adopted a class method decorator to call each type of bond as a Bonds's method. A generic bond can also be called and we applied this approach to answer the part one (see Figure 6 - Appendix).
-
-Finally, Bonds has a method for calculating the compounded interest (compound\_rate) for a given end date fulfilling the final requirement.
+Two different bonds were required, but as the behavior are the same, it was adopted a class method decorator to call each type of bond as a Bonds's method. A generic bond can also be called and we applied this approach to answer the part one (see Figure 4 - Appendix). Finally, Bonds has a method for calculating the compounded interest (compound\_rate) for a given end date fulfilling the final requirement.
 
 \hypertarget{stocks}{%
 \subsection{Stocks}\label{stocks}}
 
-Within the requirements it is important to highlight the capacity to deal with dates when not a business day. The approach was to use BDay pandas' method to always bring one business day before the given date if it is not Business day. The consequence of this method is that the cash flow attribute has values to any day, or the real historical price or the last available price. This approach also achieve the same behavior of the Bonds' cash flow attribute that is necessary to integrate investments into a portfolio. The Figure 7 (Appendix) presents price evolution for all stocks into the required period.
+Within the requirements it is important to highlight the capacity to deal with dates. The approach was to use BDay pandas' object to always bring one business day before the given date if it is not Business day. The consequence of this method is that the cash flow attribute has values to any day, or the real historical price or the last available price. This approach also achieve the same behavior of the Bonds' cash flow attribute that is necessary to integrate investments into a portfolio. The Figure 5 (Appendix) presents price evolution for all stocks into the required period.
 
 \hypertarget{investor-and-portfolio}{%
 \subsection{Investor and Portfolio}\label{investor-and-portfolio}}
@@ -163,11 +161,11 @@ To deal with the requirements to build the three portfolios type more three func
 \hypertarget{other-assumptions-and-issues}{%
 \subsection{Other assumptions and issues}\label{other-assumptions-and-issues}}
 
-The main problem that I had developing the project was the definition of how to deal with dates. As the ``term'' is an required attribute, the first approach was call bonds and stocks by start date and the term, but TimeDelta class is an absolute time definition and for dealing with period, only days are allowed. As I would like to work with years, I tried to use DateOffset that is a relative class from Pandas, that one can set years and according with the start or end date and it calculates the relative value. However dealing with the DateOffset is not straightforward and required a lot of type manipulation that was polluting the code. It also required a lot of exceptions. In the part 4 I gave up the DateOffset and refactored the code with start and end dates. In addition, during the refactoring process I also set short and long bonds with defined terms, because it's a more realistic, so I also solved all simulations with this feature.
+The main problem that I had developing the project was the definition of how to deal with dates. As the ``term'' is a required attribute, the first approach was call bonds and stocks by start date and the term, but TimeDelta class is an absolute time definition and only days are allowed. As I would like to work with years, I tried to use DateOffset that is a relative class from Pandas, that one can set years and according with the start or end date and it calculates the relative value. However dealing with the DateOffset is not straightforward and required a lot of type manipulation that was polluting the code. It also required a lot of exceptions. In the part 4 I gave up the DateOffset and refactored the code with start and end dates. In addition, during the refactoring process I also set short and long bonds with defined terms, because it's a more realistic, so I also solved all simulations with this feature in the committed version.
 
-I chose to use Descriptor classes to ensure the behavior of all objects, so only specific entries are allowed. It is not necessary, but without it the objects might mistated the entries. As the idea was to build a simulatior that any one can try different combinations - regarding the scope - it is important to ensure that the entries are well defined.
+I chose to use Descriptor classes to ensure the behavior of all objects, so only specific entries are allowed. It is not necessary, but without it the objects might mistated the entries. As the idea was to build a simulatior that anyone can try different combinations - regarding the scope - it is important to ensure that the entries are well defined.
 
-Finally, I might worked with numpy instead of pandas because it's more efficient, but it probably would require more coding work and is definitely more verbose, so pandas turns the process less painfull. I also tried to use list and dict compreehension as much as I could, because it is more efficient and readable than loops.
+Finally, I might worked with numpy instead of pandas because it's more efficient, but it probably would require more coding work and is definitely more verbose, so pandas turns the process less painful. I also tried to use list and dict comprehension as much as I could, because it is more efficient and readable than loops.
 
 \hypertarget{simulations}{%
 \section{Simulations}\label{simulations}}
@@ -175,7 +173,7 @@ Finally, I might worked with numpy instead of pandas because it's more efficient
 \hypertarget{part-3}{%
 \subsection{Part 3}\label{part-3}}
 
-First was built 500 portfolios of each mode and then was calculated the mean returns and volatility for each mode as follow (see Table 1). As expected, there is a trade-off between return and volatility.
+First was built 500 portfolios of each mode and then was calculated the mean returns and volatility for each mode as follow (see Table 1). As expected, there is a trade-off between return and volatility. Finally it is also presented the portfolios values through the period (see Figure 6 - Appendix).
 
 \begin{longtable}[]{@{}llcc@{}}
 \caption{\label{tab:unnamed-chunk-2}Mean returns and daily volatilities}\tabularnewline
@@ -192,18 +190,10 @@ Daily Volatility & 0.0002 & 0.0116 & 0.0107\tabularnewline
 \bottomrule
 \end{longtable}
 
-Finally it is also presented the portfolios values through the period (see Figure 4).
-
-\begin{figure}
-\centering
-\includegraphics[width=0.7\textwidth,height=\textheight]{p3_portfolios_monthly_price_plot.png}
-\caption{Portfolio Value}
-\end{figure}
-
 \hypertarget{part-4}{%
 \subsection{Part 4}\label{part-4}}
 
-The first requirement asked on this part is the mean yearly return for every investor mode (see Figure 5). The second point was to change the investment weight into the mixed portfolio. As the increase in budget does not modify the general behavior, The result summarized into the Table 2 has calculated with the budget of 50,000. The same trade-off is observed but the return and volatility of the mixed portfolio are - in percentage - lower than the first simulation compared to the aggressive portfolio.
+The first requirement asked on this part is the mean yearly return for every investor mode (see Figure 2). The second point was to change the investment weight into the mixed portfolio. As the increase in budget does not modify the general behavior, The result summarized into the Table 2 has calculated with the budget of 50,000. The same trade-off is observed but the return and volatility of the mixed portfolio are - in percentage - lower than the first simulation compared to the aggressive portfolio.
 
 \begin{longtable}[]{@{}llcc@{}}
 \caption{\label{tab:unnamed-chunk-4}Mean returns and daily volatilities}\tabularnewline
@@ -222,20 +212,14 @@ Daily Volatility & 0.0000 & 0.0116 & 0.0104\tabularnewline
 
 \begin{figure}
 \centering
-\includegraphics[width=0.7\textwidth,height=\textheight]{p3_portfolios_annual_return_plot.png}
+\includegraphics[width=0.68\textwidth,height=\textheight]{p3_portfolios_annual_return_plot.png}
 \caption{Portfolio Annual Returns}
 \end{figure}
 
 \hypertarget{bonus}{%
 \subsection{Bonus}\label{bonus}}
 
-The last simulations was with randomly distributed budget \(N\sim(20,000; 5,000)\). Below is presented the value for the portfolios values through the period (see Figure 6). The behavior is similar through simulations, but we can observe a bigger gap between Aggressive and Mixed investors and a lower difference in volatility (see Table 3).
-
-\begin{figure}
-\centering
-\includegraphics[width=0.7\textwidth,height=\textheight]{pb_portfolios_monthly_price_plot.png}
-\caption{Portfolio Value}
-\end{figure}
+The last simulations was with randomly distributed budget \(N\sim(20,000; 5,000)\). Below is presented the value for the portfolios values through the period (see Figure 7 - Appendix). The behavior is similar through simulations, but we can observe a bigger gap between Aggressive and Mixed investors and a lower difference in volatility (see Table 3).
 
 \begin{longtable}[]{@{}llcc@{}}
 \caption{\label{tab:unnamed-chunk-6}Mean returns and daily volatilities}\tabularnewline
@@ -252,13 +236,15 @@ Daily Volatility & 0.0001 & 0.0116 & 0.0111\tabularnewline
 \bottomrule
 \end{longtable}
 
-In addition, the best year for an aggressive investor was 2020 (see Figure 5) and was the same pattern through all simulations. Finally, the best stock to have in 2017 was FDX followed by GOOGL and MS (see Figure 7).
+In addition, the best year for an aggressive investor was 2020 (see Figure 2) and was the same pattern through all simulations. Finally, the best stock to have in 2017 was FDX followed by GOOGL and MS (see Figure 3).
 
 \begin{figure}
 \centering
-\includegraphics[width=0.7\textwidth,height=\textheight]{pb_2017_stocks_returns.png}
+\includegraphics[width=0.68\textwidth,height=\textheight]{pb_2017_stocks_returns.png}
 \caption{Return on Stocks}
 \end{figure}
+
+\newpage
 
 \hypertarget{references}{%
 \section*{References}\label{references}}
@@ -286,20 +272,34 @@ The Matplotlib development team. 2021. ``Matplotlib: Visualization with Python.'
 \leavevmode\hypertarget{ref-pandas}{}%
 the pandas development team. 2021. ``Pandas User Guide.'' \url{https://pandas.pydata.org/docs/user_guide/index.html\#user-guide}.
 
+\newpage
+
 \hypertarget{appendix}{%
 \section*{Appendix}\label{appendix}}
 \addcontentsline{toc}{section}{Appendix}
 
 \begin{figure}
 \centering
-\includegraphics[width=0.7\textwidth,height=\textheight]{p1_bonds_plot.png}
+\includegraphics[width=0.68\textwidth,height=\textheight]{p1_bonds_plot.png}
 \caption{Bonds over 50 years}
 \end{figure}
 
 \begin{figure}
 \centering
-\includegraphics[width=0.7\textwidth,height=\textheight]{p2_stocks_plot.png}
+\includegraphics[width=0.68\textwidth,height=\textheight]{p2_stocks_plot.png}
 \caption{Stock Prices}
+\end{figure}
+
+\begin{figure}
+\centering
+\includegraphics[width=0.68\textwidth,height=\textheight]{p3_portfolios_monthly_price_plot.png}
+\caption{Portfolio Value}
+\end{figure}
+
+\begin{figure}
+\centering
+\includegraphics[width=0.68\textwidth,height=\textheight]{pb_portfolios_monthly_price_plot.png}
+\caption{Portfolio Value}
 \end{figure}
 
 \end{document}

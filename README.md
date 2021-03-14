@@ -12,57 +12,23 @@ The project contains one main script (investor_simulator.py) with objects and fu
 The functional objects are: Bonds, Stocks, Investor, Portfolio.
 All objects have attributes and methods. Attributes that are inputted have defined class to ensure variables behavior.
 
-"Bonds" has as main Attributes: 
-  - period(pandas.DataOffset)
-  - pv(>= 0)
-  - rate(float, pd.Series)
-  - start_date(datetime)
-  - end_date(datetime)
-  - min_price(>= 0)
-  - min_period(pandas.DataOffset)
-  - value
-and main Methods:
-  - short, long - works as shortcut to create bonds with specifics characteristics.
-  - return_on_investment
-  - total_return
-  - cash_flow
-  - compound_rate
-
-"Stocks" has as main Attributes:
-  - start_date 
-  - end_date
-  - name ('FDX', 'GOOGL', 'XOM', 'KO', 'NOK', 'MS', 'IBM')
-  - num_stocks (int)
-  - price
-  - pv
-  - value
-and main Methods:
-  - return_on_investment
-  - total_return
-  - return_on_stock
-  - get_price
-
 Bonds and Stocks are subclass of Investment, some attributes and methods are inherited. 
 
 "Investor" is a namedtuple with mode (aggressive, defensive, mixed) and budget.
 Modes are functions called by Portfolio to build the investment portfolio following
 investor characteristics and a given period.
 
-"Portfolio" has as main attributes:
-  - mode (comes from the Investor)
-  - budget (comes from the Investor)
-  - period
-  - start_date
-  - recalculate (bool)
-  - weights [stocks, bonds]
--  investments
-
 ## Getting Started
 
 Save the main script (investor_simulator.py) into the working directory and import as a package.
 
+### Examples and Simulations
 
-### Dependencies
+- p1_short_long_bonds.py - Bonds manipulations
+- p2_stocks.py - Stocks manipulations
+- p3_portfolios.py - Investor and Portfolio manipulations
+- Simulations.py - Portfolio simulations
+- Simulation_bonus.py - Other simulations
 
 #### Packages:
 - pandas
@@ -82,7 +48,7 @@ Caio Mescouto Terra de Souza
 ## Version History
 
 * 0.1
-    * Initial Release
+    * Initial Release - March 12, 2021.
 
 ## License
 

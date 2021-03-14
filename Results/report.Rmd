@@ -2,7 +2,7 @@
 title: "Investors Simulation"
 subtitle: "Financial Computing Exam Project"
 author: "Caio Mescouto Terra de Souza"
-date: \today
+date: "March 12, 2021 16:30 (Commit e77d19a)"
 documentclass: article
 fontsize: 11pt
 linespace: 15in
@@ -36,7 +36,7 @@ Investor has only two attributes, mode and budget, but the portfolio is the mann
 
 ## The guideline structure
 
-Any investment can be understood as a relationship between price (or present value) and future value. This relationship is a mathematical function that as follow \@ref(eq:pv):
+Any investment can be understood as a relationship between price (or present value) and future value. This relationship is a mathematical function as follow \@ref(eq:pv):
 
 \begin{equation}
 f(PV, rate, period)\rightarrow FV
@@ -45,32 +45,25 @@ f(PV, rate, period)\rightarrow FV
 
 Sometimes the function is unknown, or the interest rate varies along the period. Therefore, the way to deal with this limitation is approach any investment as a cash flow. the first assumption is define the minimum period (by now 1 day). Therefore, the equation can be solved for each day, because for any date we now the "PV" (the "FV" of the day - 1), the period and the interest rate or the FV. Finally, period (or term) is basically the difference between dates.
 
-The structure started with a object called "Investment" and "Bonds" and "Stocks" are objects whose inherit its attributes and methods. The role of "Investment" is abstract because we can't calculate the cash flow without a "mathematical" function that each investment type has its own. The "Investor" has only two attributes and the choice was to use a "namedtuple" to create it. and the last main structure is the "Portfolio". It is an object that combines Investor with Investments. The concept in which portfolio was thought is based on functions as First-Class objects in Python [@fpy, p. 167].
+The structure started with a object called "Investment" that "Bonds" and "Stocks" inherit its attributes and methods. The role of "Investment" is abstract because we can't calculate the cash flow without a "mathematical" function that each investment type has its own. As the "Investor" has only two attributes the choice was to use a "namedtuple" to create it. The last main structure is the "Portfolio". It is an object that combines Investor with Investments. The concept in which portfolio was thought is based on functions as First-Class objects in Python [@fpy, p. 167].
 
 
-
-![UML of main objects](uml.png){width=50%}
+![UML of main objects](uml.png){width=55%}
 
 ## Bonds
 
-As the interest rate are annual and the unit of period was set as day, it was necessary define a strategy to deal with the transformation, since years do not have all the same numbers of days. As the trade-off between having exactly the daily rate or adopting a convention [@secur, p.4] is very small, compared to the work of coding it, the assumption adopted was day-count 365 \@ref(eq:bonds-day).
+As the interest rate are annual and the unit of period was set as day, it was necessary to deal with the transformation, since years do not have all the same numbers of days. The trade-off between having exactly the daily rate or adopting a convention [@secur, p.4] that set only on daily rate through the period, is very small compared to the work of coding it, thus the assumption adopted was day-count 365 \@ref(eq:bonds-day).
 
 \begin{equation}
 i_{\text{daily interest rate}}=(1+i_{\text{annual interest rate}})^{\frac{1}{365}}-1
 (\#eq:bonds-day)
 \end{equation}
 
-Two different bonds were required, but as the behavior are the same, it was adopted a class method decorator to call each type of bond as a Bonds's method. A generic bond can also be called and we applied this approach to answer the part one (see Figure 6 - Appendix).
-
-
-
-Finally, Bonds has a method for calculating the compounded interest (compound_rate) for a given end date fulfilling the final requirement.
+Two different bonds were required, but as the behavior are the same, it was adopted a class method decorator to call each type of bond as a Bonds's method. A generic bond can also be called and we applied this approach to answer the part one (see Figure 4 - Appendix). Finally, Bonds has a method for calculating the compounded interest (compound_rate) for a given end date fulfilling the final requirement.
 
 ## Stocks
 
-Within the requirements it is important to highlight the capacity to deal with dates when not a business day. The approach was to use BDay pandas' method to always bring one business day before the given date if it is not Business day. The consequence of this method is that the cash flow attribute has values to any day, or the real historical price or the last available price. This approach also achieve the same behavior of the Bonds' cash flow attribute that is necessary to integrate investments into a portfolio. The Figure 7 (Appendix) presents price evolution for all stocks into the required period.
-
-
+Within the requirements it is important to highlight the capacity to deal with dates. The approach was to use BDay pandas' object to always bring one business day before the given date if it is not Business day. The consequence of this method is that the cash flow attribute has values to any day, or the real historical price or the last available price. This approach also achieve the same behavior of the Bonds' cash flow attribute that is necessary to integrate investments into a portfolio. The Figure 5 (Appendix) presents price evolution for all stocks into the required period.
 
 ## Investor and Portfolio
 
@@ -94,17 +87,17 @@ To deal with the requirements to build the three portfolios type more three func
 
 ## Other assumptions and issues
 
-The main problem that I had developing the project was the definition of how to deal with dates. As the "term" is an required attribute, the first approach was call bonds and stocks by start date and the term, but TimeDelta class is an absolute time definition and for dealing with period, only days are allowed. As I would like to work with years, I tried to use DateOffset that is a relative class from Pandas, that one can set years and according with the start or end date and it calculates the relative value. However dealing with the DateOffset is not straightforward and required a lot of type manipulation that was polluting the code. It also required a lot of exceptions. In the part 4 I gave up the DateOffset and refactored the code with start and end dates. In addition, during the refactoring process I also set short and long bonds with defined terms, because it's a more realistic, so I also solved all simulations with this feature. 
+The main problem that I had developing the project was the definition of how to deal with dates. As the "term" is a required attribute, the first approach was call bonds and stocks by start date and the term, but TimeDelta class is an absolute time definition and only days are allowed. As I would like to work with years, I tried to use DateOffset that is a relative class from Pandas, that one can set years and according with the start or end date and it calculates the relative value. However dealing with the DateOffset is not straightforward and required a lot of type manipulation that was polluting the code. It also required a lot of exceptions. In the part 4 I gave up the DateOffset and refactored the code with start and end dates. In addition, during the refactoring process I also set short and long bonds with defined terms, because it's a more realistic, so I also solved all simulations with this feature in the committed version. 
 
-I chose to use Descriptor classes to ensure the behavior of all objects, so only specific entries are allowed. It is not necessary, but without it the objects might mistated the entries. As the idea was to build a simulatior that any one can try different combinations - regarding the scope - it is important to ensure that the entries are well defined.
+I chose to use Descriptor classes to ensure the behavior of all objects, so only specific entries are allowed. It is not necessary, but without it the objects might mistated the entries. As the idea was to build a simulatior that anyone can try different combinations - regarding the scope - it is important to ensure that the entries are well defined.
 
-Finally, I might worked with numpy instead of pandas because it's more efficient, but it probably would require more coding work and is definitely more verbose, so pandas turns the process less painfull. I also tried to use list and dict compreehension as much as I could, because it is more efficient and readable than loops. 
+Finally, I might worked with numpy instead of pandas because it's more efficient, but it probably would require more coding work and is definitely more verbose, so pandas turns the process less painful. I also tried to use list and dict comprehension as much as I could, because it is more efficient and readable than loops. 
 
 # Simulations
 
 ## Part 3
 
-First was built 500 portfolios of each mode and then was calculated the mean returns and volatility for each mode as follow (see Table 1). As expected, there is a trade-off between return and volatility.
+First was built 500 portfolios of each mode and then was calculated the mean returns and volatility for each mode as follow (see Table 1). As expected, there is a trade-off between return and volatility. Finally it is also presented the portfolios values through the period (see Figure 6 - Appendix).
 
 ```{r include=FALSE}
 df <- data.frame(row.names=c('Total Return', 'Daily Volatility'), Defensive = c(0.1159, 0.0002), Aggressive = c(0.3081, 0.0116), Mixed=c(0.3012, 0.0107))
@@ -118,13 +111,10 @@ knitr::kable(df, "simple", align = "lccc", digits = 4,
              caption = "Mean returns and daily volatilities")
 ```
 
-Finally it is also presented the portfolios values through the period (see Figure 4).
-
-![Portfolio Value](p3_portfolios_monthly_price_plot.png){width=70%}
 
 ## Part 4
 
-The first requirement asked on this part is the mean yearly return for every investor mode (see Figure 5). The second point was to change the investment weight into the mixed portfolio. As the increase in budget does not modify the general behavior, The result summarized into the Table 2 has calculated with the budget of 50,000. The same trade-off is observed but the return and volatility of the mixed portfolio are - in percentage - lower than the first simulation compared to the aggressive portfolio.
+The first requirement asked on this part is the mean yearly return for every investor mode (see Figure 2). The second point was to change the investment weight into the mixed portfolio. As the increase in budget does not modify the general behavior, The result summarized into the Table 2 has calculated with the budget of 50,000. The same trade-off is observed but the return and volatility of the mixed portfolio are - in percentage - lower than the first simulation compared to the aggressive portfolio.
 
 
 ```{r include=FALSE}
@@ -139,13 +129,13 @@ knitr::kable(df2, "simple", align = "lccc", digits = 4,
              caption = "Mean returns and daily volatilities")
 ```
 
-![Portfolio Annual Returns](p3_portfolios_annual_return_plot.png){width=70%}
+![Portfolio Annual Returns](p3_portfolios_annual_return_plot.png){width=68%}
 
 ## Bonus
 
-The last simulations was with randomly distributed budget $N\sim(20,000; 5,000)$. Below is presented the value for the portfolios values through the period (see Figure 6). The behavior is similar through simulations, but we can observe a bigger gap between Aggressive and Mixed investors and a lower difference in volatility (see Table 3). 
+The last simulations was with randomly distributed budget $N\sim(20,000; 5,000)$. Below is presented the value for the portfolios values through the period (see Figure 7 - Appendix). The behavior is similar through simulations, but we can observe a bigger gap between Aggressive and Mixed investors and a lower difference in volatility (see Table 3). 
 
-![Portfolio Value](pb_portfolios_monthly_price_plot.png){width=70%}
+
 ```{r include=FALSE}
 df2 <- data.frame(row.names=c('Total Return', 'Daily Volatility'), Defensive = c(0.1268, 0.0001), Aggressive = c(0.3625, 0.0116), Mixed=c(0.2964, 0.0111))
 ```
@@ -158,16 +148,25 @@ knitr::kable(df2, "simple", align = "lccc", digits = 4,
              caption = "Mean returns and daily volatilities")
 ```
 
-In addition, the best year for an aggressive investor was 2020 (see Figure 5) and was the same pattern through all simulations. Finally, the best stock to have in 2017 was FDX followed by GOOGL and MS (see Figure 7).
+In addition, the best year for an aggressive investor was 2020 (see Figure 2) and was the same pattern through all simulations. Finally, the best stock to have in 2017 was FDX followed by GOOGL and MS (see Figure 3).
 
-![Return on Stocks](pb_2017_stocks_returns.png){width=70%}
+![Return on Stocks](pb_2017_stocks_returns.png){width=68%}
+
+\newpage
 
 # References {-}
 
 <div id="refs"></div>
 
+\newpage
+
 # Appendix {-}
 
-![Bonds over 50 years](p1_bonds_plot.png){width=70%}
+![Bonds over 50 years](p1_bonds_plot.png){width=68%}
 
-![Stock Prices](p2_stocks_plot.png){width=70%}
+![Stock Prices](p2_stocks_plot.png){width=68%}
+
+
+![Portfolio Value](p3_portfolios_monthly_price_plot.png){width=68%}
+
+![Portfolio Value](pb_portfolios_monthly_price_plot.png){width=68%}
