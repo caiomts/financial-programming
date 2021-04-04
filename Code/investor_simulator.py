@@ -10,7 +10,7 @@ import collections
 # Stocks data
 
 tickers = ['FDX', 'GOOGL', 'XOM', 'KO', 'NOK', 'MS', 'IBM']
-stocks_df = web.DataReader(tickers, 'yahoo', start=datetime(2012, 1, 1)).High
+stocks_df = web.DataReader(tickers, 'yahoo', start=datetime(2010, 1, 1)).High
 
 
 # Descriptors guarantee the type and behavior of variables
