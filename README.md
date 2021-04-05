@@ -18,9 +18,23 @@ Bonds and Stocks are subclass of Investment, some attributes and methods are inh
 Modes are functions called by Portfolio to build the investment portfolio following
 investor characteristics and a given period.
 
+## Assumptions
+
+Stocks: ['FDX', 'GOOGL', 'XOM', 'KO', 'NOK', 'MS', 'IBM']
+Bonds: Short (2yo 1.5% p.a. min price:250); Long (5yo 3.0% p.a. min price:1000)
+
+####Portfolio allocation: 
+**Defensive**: Picks randomly a long or short bond, as long as it has > 1000 and then
+allocate the rest in short.  
+**Aggressive**: Picks randomly a stock and an amount [0, N] where N <= Budget. 
+Repeat it until budget < 100.  
+**Mixed**: Picks randomly, according to weights, Stock or Bond and for each try, follows the same
+attempt, follows the same rules as above.
+
 ## Getting Started
 
-Save the main script (investor_simulator.py) into the working directory and import as a package
+Save the main script (investor_simulator.py) into the working directory and import as a package or try some simulations
+[here!](https://share.streamlit.io/caiomts/financial-programming/sim_streamlit.py)
 
 
 ### Examples and Simulations
@@ -35,7 +49,7 @@ Save the main script (investor_simulator.py) into the working directory and impo
 
 Caio Mescouto Terra de Souza
 
-* caio.mescouto-terra-de-souza@tsm-education.fr
+>caio.mescouto@gmail.com
 
 ## Version History
 

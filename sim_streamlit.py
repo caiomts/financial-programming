@@ -6,7 +6,7 @@ import plotly.graph_objects as go
 import plotly.express as px
 
 
-st.set_page_config(page_title='Portfolio Simulation', page_icon=None, layout='wide', initial_sidebar_state='auto')
+st.set_page_config(page_title='Portfolio Simulation', page_icon=None, initial_sidebar_state='auto')
 
 st.markdown(
     """<a style='display: block; text-align: right;'>A Web App by </a>
@@ -54,11 +54,11 @@ header = ['Index', 'Defensive', 'Aggressive', 'Mixed']
 
 fig = go.Figure(data=[go.Table(
     header=dict(values=header,
-                fill_color='#8da0cb', align='center', font=dict(color='white', size=23), height=50),
+                fill_color='#999999', align='center', font=dict(color='white', size=18), height=40),
     cells=dict(values=[results.index, results.defensive, results.aggressive, results.mixed],
-               fill_color=['#8da0cb', '#66c2a5', '#66c2a5', '#66c2a5'],
-               align='center', font=dict(color='white',
-                                         size=20), height=40)
+               fill_color=['#999999', '#e0e0e0', '#e0e0e0', '#e0e0e0'],
+               align='center', font=dict(color=['white', '#4d4d4d', '#4d4d4d', '#4d4d4d'],
+                                         size=16), height=30)
 )])
 st.plotly_chart(fig, use_container_width=True)
 
@@ -66,7 +66,7 @@ st.plotly_chart(fig, use_container_width=True)
 means = invsim.mean_monthly_value_on_portfolios(groups, names)
 
 fig = px.line(means.reset_index(), x="Date", y="Value", color='Portfolio_group', title='Portfolio Value'
-              , height=700, template='seaborn',
+              , height=600, template='plotly_white',
               color_discrete_map={'defensive': '#66c2a5', 'aggressive': '#fc8d62', 'mixed': '#8da0cb'})
 fig.update_layout(legend=dict(title=None, orientation="h", y=1, yanchor="bottom", x=0.5, xanchor="center"))
 st.plotly_chart(fig, use_container_width=True)
@@ -77,8 +77,8 @@ results = invsim.mean_yearly_return_on_portfolios(groups, names).dropna()
 results['Date'] = results.Date.map(lambda x: x.year)
 
 
-fig = px.bar(results.reset_index(), x="Date", y="Value", color='Portfolio_group',
-             barmode='group', height=700, template='plotly_white',
+fig = px.bar(results.reset_index(), x="Date", y="Value", color='Portfolio_group', title='Annual return',
+             barmode='group', height=600, template='plotly_white',
              color_discrete_map={'defensive': '#66c2a5', 'aggressive': '#fc8d62', 'mixed': '#8da0cb'})
 fig.update_layout(legend=dict(title=None, orientation="h", y=1, yanchor="bottom", x=0.5, xanchor="center"))
 fig.update_xaxes(type='category')
