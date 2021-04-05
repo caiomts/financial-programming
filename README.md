@@ -20,7 +20,8 @@ investor characteristics and a given period.
 
 ## Getting Started
 
-Save the main script (investor_simulator.py) into the working directory and import as a package.
+Save the main script (investor_simulator.py) into the working directory and import as a package
+
 
 ### Examples and Simulations
 
@@ -29,15 +30,6 @@ Save the main script (investor_simulator.py) into the working directory and impo
 - p3_portfolios.py - Investor and Portfolio manipulations
 - Simulations.py - Portfolio simulations
 - Simulation_bonus.py - Other simulations
-
-#### Packages:
-- pandas
-- itertools
-- pandas_datareader.data
-- datetime
-- random
-- math
-- collections
 
 ## Author
 
@@ -49,6 +41,9 @@ Caio Mescouto Terra de Souza
 
 * 0.1
     * Initial Release - March 12, 2021.
+  
+* 1.0
+  * Web app Release - April 05, 2021.
 
 ## License
 
