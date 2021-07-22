@@ -33,8 +33,7 @@ attempt, follows the same rules as above.
 
 ## Getting Started
 
-Save the main script (investor_simulator.py) into the working directory and import as a package or try some simulations
-[here!](https://share.streamlit.io/caiomts/financial-programming/sim_streamlit.py)
+Save the main script (investor_simulator.py) into the working directory and import as a package.
 
 
 ### Examples and Simulations
